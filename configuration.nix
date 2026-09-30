@@ -114,7 +114,7 @@ in {
   users.users.${ vars.username } = {
     isNormalUser = true;
     description = "${vars.username}";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "docker" ];
     packages = with pkgs; [
     #  thunderbird
     ];
@@ -141,7 +141,7 @@ in {
     vscode
   ];
 
-  virtualisation.docker.enable = true;
+  virtualisation.docker.enable = true;  
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;
