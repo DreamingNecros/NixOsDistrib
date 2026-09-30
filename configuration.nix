@@ -17,13 +17,18 @@ in {
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot.graceful = true;
   boot.loader.efi.canTouchEfiVariables = true;
+
+  #Enable drivers for nvidia graphic card and wifi card
+  boot.kernelModules = [ "nvidia" "nvidia_modeset" "nvidia_uvm" "nvidia_drm" "iwlwifi" "tcp_bbr" ];    
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   nixpkgs.config.allowUnfree = true;
 
   networking.hostName = "${ vars.hostname }"; # Define your hostname.
+
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
   services.openssh = {
     enable = true;
@@ -42,8 +47,12 @@ in {
   # networking.proxy.default = "http://user:password@proxy:port/";
   # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
 
-  # Enable networking
+  # Enable redistributable firmware for Intel Wi-Fi and Bluetooth cards
+  hardware.enableRedistributableFirmware = true;
+
+  # Enable NetworkManager to easily connect to Wi-Fi networks
   networking.networkmanager.enable = true;
+  networking.networkmanager.wifi.powersave = false;
 
   # Set your time zone.
   time.timeZone = "Europe/Paris";
@@ -67,7 +76,7 @@ in {
   services.xserver.enable = true;
 
   # Enable the GNOME Desktop Environment.
-  services.xserver.displayManager.gdm.enable = true;
+  services.displayManager.gdm.enable = true;
   services.xserver.desktopManager.gnome.enable = true;
 
   # Configure keymap in X11
@@ -100,7 +109,7 @@ in {
 
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
-  virtualisation.docker.enable = true;
+  #virtualisation.docker.enable = true;
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${ vars.username } = {
     isNormalUser = true;
@@ -140,6 +149,48 @@ in {
   #   enableSSHSupport = true;
   # };
 
+   # FIX: Network Congestion Control (Helps with packet jitter)
+  boot.kernel.sysctl = {
+    "net.ipv4.tcp_congestion_control" = "bbr";
+    "net.core.default_qdisc" = "fq";
+    "net.core.wmem_max" = 1073741824;
+    "net.core.rmem_max" = 1073741824;
+    "net.ipv4.tcp_rmem" = "4096 87380 1073741824";
+    "net.ipv4.tcp_wmem" = "4096 87380 1073741824";
+  };
+
+  hardware.graphics.enable = true;
+  hardware.graphics.enable32Bit = true;
+
+  #Load Nvidia Drivers
+
+  services.xserver.videoDrivers = [ "nvidia" ];
+
+  hardware.nvidia = {
+    modesetting.enable = true;
+    
+    powerManagement.enable = false;
+  
+    powerManagement.finegrained = true;
+
+    open = false;
+
+    nvidiaSettings = true;
+
+    package = config.boot.kernelPackages.nvidiaPackages.stable;
+
+    prime = {
+      offload = {
+          enable = true;
+          enableOffloadCmd = true;
+      };
+      
+    intelBusId = "PCI:0@0:2:0";
+    nvidiaBusId = "PCI:1@0:0:0";
+    # amdgpuBusId = "PCI:5@0:0:0"; # If you have an AMD iGPU
+    };
+  };
+
   # List services that you want to enable:
 
   # Enable the OpenSSH daemon.
@@ -157,6 +208,6 @@ in {
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "25.11"; # Did you read the comment?
+  system.stateVersion = "26.05"; # Did you read the comment?
 
 }
