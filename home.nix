@@ -29,6 +29,7 @@ in {
     (lib.lowPrio python312)
 
     #Container tools
+    docker
     minikube
     kubectl
     kubectx
