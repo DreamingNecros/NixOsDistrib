@@ -56,6 +56,7 @@ in {
     discord
     steam
     obsidian
+    libreoffice
     
     # # Adds the 'hello' command to your environment. It prints a friendly
     # # "Hello, world!" when run.
@@ -110,6 +111,144 @@ in {
     # EDITOR = "emacs";
   #};
 
+  # ┌───────────────────────────────────────────────────────────────┐
+  # │  ZSH                                                          │
+  # └───────────────────────────────────────────────────────────────┘
+  programs.zsh = {
+    enable            = true;
+    autosuggestion.enable    = true;   # Suggestions basées sur l'historique
+    syntaxHighlighting.enable = true;  # Coloration syntaxique en live
+
+    # Historique
+    history = {
+      size       = 100;
+      save       = 100;
+      extended   = true;   # Sauvegarde le timestamp
+      ignoreDups = true;
+      share      = true;   # Partage l'historique entre les sessions
+    };
+
+    # Options zsh
+    setOptions = [
+      "HIST_VERIFY"        # Affiche la commande avant de l'exécuter depuis l'historique
+      "SHARE_HISTORY"
+      "APPEND_HISTORY"
+      "INC_APPEND_HISTORY"
+      "AUTO_CD"            # cd implicite en tapant un nom de dossier
+      "GLOB_DOTS"          # Inclut les fichiers cachés dans les globs
+    ];
+
+    # Aliases
+    shellAliases = {
+      # ── Navigation
+      ".."  = "cd ..";
+      "..." = "cd ../..";
+      "~"   = "cd ~";
+
+      # ── eza (ls moderne)
+      ls     = "eza --color=always --group-directories-first";
+      la     = "eza --color=always --group-directories-first -la";
+      lt     = "eza --color=always --group-directories-first --tree";
+
+      # ── Git
+      gs = "git status";
+      gc = "git checkout";
+
+      # ── Nix
+      config    = "code ${vars.config_location}";
+      rebuild   = "sudo nixos-rebuild switch --flake ${vars.config_location}#${vars.hostname}";
+      update    = "sudo nix flake update --flake ${vars.config_location}";
+      cleanup   = "nix-collect-garbage -d";
+
+      # ── Divers
+      ip    = "curl -s ifconfig.me";  # IP publique
+      myip  = "ipconfig getifaddr en0"; # IP locale
+      flush = "dscacheutil -flushcache && sudo killall -HUP mDNSResponder"; # Vide le cache DNS
+      reload= "source $HOME/.zshrc && cd $HOME && clear";
+    };
+
+    plugins = [
+      {
+        name = "powerlevel10k";
+        src  = pkgs.zsh-powerlevel10k;
+        file = "share/zsh-powerlevel10k/powerlevel10k.zsh-theme";
+      }
+    ];
+
+    # Initialisations supplémentaires dans .zshrc
+    initContent = builtins.readFile ./zshrc_extra.sh;
+};
+# ┌───────────────────────────────────────────────────────────────┐
+# │  GIT                                                          │
+# └───────────────────────────────────────────────────────────────┘
+  programs.git = {
+    enable = true;
+
+    settings = {
+      user = {
+        name  = vars.gitUser;
+        email = vars.gitEmail;
+      };
+      init.defaultBranch   = "main";
+      pull.rebase          = true;
+      push.autoSetupRemote = true;
+      core = {
+        autocrlf   = "input";
+        whitespace = "trailing-space,space-before-tab";
+      };
+      credential.helper = "osxkeychain";
+      color.ui          = "auto";
+      log.date          = "iso";
+    };
+
+    ignores = [
+      ".DS_Store"
+      ".AppleDouble"
+      ".LSOverride"
+      "*.orig"
+      ".direnv"
+      ".envrc"
+      "*.log"
+    ];
+  };
+
+programs.delta = {
+    enable               = true;
+    enableGitIntegration = true;
+    options = {
+      navigate     = true;
+      side-by-side = true;
+      line-numbers = true;
+      syntax-theme = "Dracula";
+    };
+  };
+  /*
+  # ┌───────────────────────────────────────────────────────────────┐
+  # │  KITTY                                                        │
+  # └───────────────────────────────────────────────────────────────┘
+  programs.kitty = {
+    enable = true;
+    font = {
+      name = "MesloLGS Nerd Font";
+      size = 12;
+    };
+    settings = {
+      background            = "#191D27";
+      background_opacity    = "0.95";
+      foreground            = "#E0E0E0";
+      bold_foreground       = "#EDEDED";
+      selection_background  = "#273D4C";
+
+      tab_bar_style              = "powerline";
+      tab_powerline_style        = "round";
+      tab_bar_background         = "#0F1218";
+      active_tab_background      = "#273D4C";
+      active_tab_foreground      = "#E0E0E0";
+      inactive_tab_background    = "#191D27";
+      inactive_tab_foreground    = "#666C7A";
+    };
+  };
+  */
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 }
